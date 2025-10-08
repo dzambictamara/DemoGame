@@ -4,17 +4,21 @@ let playerSheet: createjs.SpriteSheet;
 let player: createjs.Sprite;
 let isJumping = false;
 let loader: createjs.LoadQueue;
+let lights: createjs.Bitmap[] = [];
+let light: createjs.Bitmap;
 function init() {
 
     let manifest = [
-        { src: "player_idle.png", id: "idle", crossOrigin: "anonymous" },
-        { src: "player_jump.png", id: "jump", crossOrigin: "anonymous" },
-        { src: "player_walk1.png", id: "walk1", crossOrigin: "anonymous" },
-        { src: "player_walk2.png", id: "walk2", crossOrigin: "anonymous" },
+        { src: "player/player_idle.png", id: "idle", crossOrigin: "anonymous" },
+        { src: "player/player_jump.png", id: "jump", crossOrigin: "anonymous" },
+        { src: "player/player_walk1.png", id: "walk1", crossOrigin: "anonymous" },
+        { src: "player/player_walk2.png", id: "walk2", crossOrigin: "anonymous" },
+        { src: "scene/light.png", id: "light", crossOrigin: "anonymous" },
+        { src: "scene/city.png", id: "city", crossOrigin: "anonymous" }
 
     ];
     loader = new createjs.LoadQueue(false);
-    loader.loadManifest(manifest, true, "./assets/player/");
+    loader.loadManifest(manifest, true, "./assets/");
     loader.on("complete", handleComplete);
 }
 
@@ -28,13 +32,40 @@ function handleComplete() {
     background.graphics.drawRect(0, 0, 1200, 600);
     stage.addChild(background);
 
+    createScene();
+
     createPlayer();
-    stage.addChild(player);
+
 
     keyboardControls();
-    
+
     createjs.Ticker.timingMode = createjs.Ticker.RAF;
     createjs.Ticker.addEventListener("tick", stage);
+}
+
+
+function createScene() {
+
+    let city = new createjs.Bitmap(loader.getResult("city"));
+    city.scaleX = 3;
+    city.scaleY = 1.2;
+    city.x = -100;
+    city.y = (stage.canvas as HTMLCanvasElement).height - 450;
+    stage.addChild(city);
+
+    if (!lights) {
+        lights = [];
+    }
+    for (let i = 0; i < 6; i++) {
+        let light = new createjs.Bitmap(loader.getResult("light"));
+        light.scaleX = 0.3;
+        light.scaleY = 0.3;
+        light.x = (-100 + i * 300);
+        light.y = (stage.canvas as HTMLCanvasElement).height - 400;
+        stage.addChild(light);
+
+        lights.push(light);
+    }
 }
 
 function createPlayer() {
@@ -56,6 +87,7 @@ function createPlayer() {
     player.regY = 110 / 2;
     player.x = startX;
     player.y = startY;
+    stage.addChild(player);
 }
 
 function keyboardControls() {
@@ -64,21 +96,34 @@ function keyboardControls() {
             case "ArrowRight":
                 player.scaleX = 1; // Flip the sprite
                 player.gotoAndPlay("walk");
-                createjs.Tween.get(player).to({ x: player.x + 10 }, 50)
-                    .call(() => { player.gotoAndPlay("idle"); });
+                for (let light of lights) {
+                    if (light.x < -400) {
+                        light.x = light.x + 6 * 300; // Reset position to the left
+                    }
+                    createjs.Tween.get(light).to({ x: light.x - 10 }, 50)
+                        .call(() => {
+                            player.gotoAndPlay("idle");
+
+                        });
+                }
+
                 break;
 
             case "ArrowLeft":
                 player.scaleX = -1; // Flip the sprite
                 player.gotoAndPlay("walk");
-                createjs.Tween.get(player).to({ x: player.x - 10 }, 50)
-                    .call(() => {
-                        player.gotoAndPlay("idle");
-                    });
+                for (let light of lights) {
+                    if (light.x > (stage.canvas as HTMLCanvasElement).width) {
+                        light.x = light.x - 6 * 300; // Reset position to the left
+                    }
+                    createjs.Tween.get(light).to({ x: light.x + 10 }, 50)
+                        .call(() => {
+                            player.gotoAndPlay("idle");
+                        });
+                }
                 break;
 
             case "ArrowUp":
-                console.log("Up arrow pressed");
                 if (!isJumping) {
                     isJumping = true;
                     player.gotoAndPlay("jump");
