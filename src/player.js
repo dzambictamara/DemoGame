@@ -24,7 +24,9 @@ var Player = /** @class */ (function () {
             .to({ y: this.sprite.y }, 500, createjs.Ease.quadIn)
             .call(function () {
             _this.isJumping = false;
-            _this.idle();
+            if (_this.isWalking) {
+                _this.sprite.gotoAndPlay("walk");
+            }
         });
     };
     Player.prototype.walk = function (direction) {

@@ -28,7 +28,9 @@ export class Player {
             .to({ y: this.sprite.y }, 500, createjs.Ease.quadIn)
             .call(() => {
                 this.isJumping = false;
-                this.idle();
+                if (this.isWalking) {
+                    this.sprite.gotoAndPlay("walk");
+                }
             });
 
     }

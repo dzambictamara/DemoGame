@@ -49,7 +49,7 @@ export class Game {
             images: [this.loader.getResult("walk1"), this.loader.getResult("walk2"), this.loader.getResult("idle"), this.loader.getResult("jump")],
             frames: { width: 80, height: 110, count: 4 },
             animations: {
-                walk: [0, 1, "walk", 0.1],
+                walk: [0, 1, "walk", 0.5],
                 idle: [1, 1, "idle"],
                 jump: [3, 3, "jump"]
             }
@@ -65,54 +65,64 @@ export class Game {
 
     moveLight(light: createjs.Bitmap) {
         if (this.player.isWalking === false) return;
-        createjs.Tween.get(light).to({ x: light.x - this.player.sprite.scaleX * this.player.speed }, 50).call(() => {
-            this.player.idle();
-        });
-
+        this.player.sheet.getAnimation("walk").speed = this.player.speed / 100;
+        createjs.Tween.get(light).to({ x: light.x - this.player.sprite.scaleX * this.player.speed }, 50);
     }
 
     keyboardControls() {
-        window.addEventListener("keydown", (event) => {
 
-            if (event.key === "p") createjs.Ticker.paused = !createjs.Ticker.paused;
-            
-            if (createjs.Ticker.paused){
-                if (this.player.isWalking) this.player.idle();
+        const DOUBLE_KEY_THRESHOLD = 300;
+
+        let keyPressTimestamps: Record<string, number[]> = {};
+
+        window.addEventListener("keydown", (event) => {
+            let key = event.key;
+
+            if (key === "p") createjs.Ticker.paused = !createjs.Ticker.paused;
+            if (createjs.Ticker.paused || event.repeat) return;
+
+            if (key === "ArrowUp") {
+                this.player.jump();
                 return;
             }
 
-            switch (event.key) {
-                case "ArrowRight":
-                    this.player.walk("right");
-                    for (let light of this.lights) {
-                        if (light.x < -400) {
-                            light.x += 6 * 300; // Reset position to the right
-                        }
-                        this.moveLight(light);
-                    }
-                    break;
+            const now = Date.now();
 
-                case "ArrowLeft":
+            if (!keyPressTimestamps[key]) keyPressTimestamps[key] = [];
+            keyPressTimestamps[key].push(now);
 
-                    this.player.walk("left");
-                    for (let light of this.lights) {
-                        if (light.x > (this.stage.canvas as HTMLCanvasElement).width) {
-                            light.x -= 6 * 300; // Reset position to the left
-                        }
-                        this.moveLight(light);
-                    }
-                    break;
+            keyPressTimestamps[key] = keyPressTimestamps[key].filter(t => now - t <= DOUBLE_KEY_THRESHOLD);
 
-                case "ArrowUp":
-                    this.player.jump();
-                    break;
-                default:
-                    break;
+            this.player.speed = keyPressTimestamps[key].length >= 2 ? 20 : 10;
+
+
+            if (key === "ArrowRight") this.player.walk("right");
+            if (key === "ArrowLeft")  this.player.walk("left");
+        });
+
+        window.addEventListener("keyup", (event) => {
+            if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+                this.player.idle();
+                this.player.speed = 10;
             }
         });
 
+        const loop = () => {
+            requestAnimationFrame(loop);
+            if (!this.player.isWalking) return;
 
+            for (let light of this.lights) {
+                if (light.x < -400) {
+                    light.x += 6 * 300;
+                } else if (light.x > (this.stage.canvas as HTMLCanvasElement).width) {
+                    light.x -= 6 * 300;
+                }
+                this.moveLight(light);
+            }
+        };
 
+        loop();
     }
+
 
 }

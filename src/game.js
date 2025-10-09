@@ -38,7 +38,7 @@ var Game = /** @class */ (function () {
             images: [this.loader.getResult("walk1"), this.loader.getResult("walk2"), this.loader.getResult("idle"), this.loader.getResult("jump")],
             frames: { width: 80, height: 110, count: 4 },
             animations: {
-                walk: [0, 1, "walk", 0.1],
+                walk: [0, 1, "walk", 0.5],
                 idle: [1, 1, "idle"],
                 jump: [3, 3, "jump"]
             }
@@ -49,51 +49,58 @@ var Game = /** @class */ (function () {
         this.stage.addChild(this.player.sprite);
     };
     Game.prototype.moveLight = function (light) {
-        var _this = this;
         if (this.player.isWalking === false)
             return;
-        createjs.Tween.get(light).to({ x: light.x - this.player.sprite.scaleX * this.player.speed }, 50).call(function () {
-            _this.player.idle();
-        });
+        this.player.sheet.getAnimation("walk").speed = this.player.speed / 100;
+        createjs.Tween.get(light).to({ x: light.x - this.player.sprite.scaleX * this.player.speed }, 50);
     };
     Game.prototype.keyboardControls = function () {
         var _this = this;
+        var DOUBLE_KEY_THRESHOLD = 300;
+        var keyPressTimestamps = {};
         window.addEventListener("keydown", function (event) {
-            if (event.key === "p")
+            var key = event.key;
+            if (key === "p")
                 createjs.Ticker.paused = !createjs.Ticker.paused;
-            if (createjs.Ticker.paused) {
-                if (_this.player.isWalking)
-                    _this.player.idle();
+            if (createjs.Ticker.paused || event.repeat)
+                return;
+            if (key === "ArrowUp") {
+                _this.player.jump();
                 return;
             }
-            switch (event.key) {
-                case "ArrowRight":
-                    _this.player.walk("right");
-                    for (var _i = 0, _a = _this.lights; _i < _a.length; _i++) {
-                        var light = _a[_i];
-                        if (light.x < -400) {
-                            light.x += 6 * 300; // Reset position to the right
-                        }
-                        _this.moveLight(light);
-                    }
-                    break;
-                case "ArrowLeft":
-                    _this.player.walk("left");
-                    for (var _b = 0, _c = _this.lights; _b < _c.length; _b++) {
-                        var light = _c[_b];
-                        if (light.x > _this.stage.canvas.width) {
-                            light.x -= 6 * 300; // Reset position to the left
-                        }
-                        _this.moveLight(light);
-                    }
-                    break;
-                case "ArrowUp":
-                    _this.player.jump();
-                    break;
-                default:
-                    break;
+            var now = Date.now();
+            if (!keyPressTimestamps[key])
+                keyPressTimestamps[key] = [];
+            keyPressTimestamps[key].push(now);
+            keyPressTimestamps[key] = keyPressTimestamps[key].filter(function (t) { return now - t <= DOUBLE_KEY_THRESHOLD; });
+            _this.player.speed = keyPressTimestamps[key].length >= 2 ? 20 : 10;
+            if (key === "ArrowRight")
+                _this.player.walk("right");
+            if (key === "ArrowLeft")
+                _this.player.walk("left");
+        });
+        window.addEventListener("keyup", function (event) {
+            if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+                _this.player.idle();
+                _this.player.speed = 10;
             }
         });
+        var loop = function () {
+            requestAnimationFrame(loop);
+            if (!_this.player.isWalking)
+                return;
+            for (var _i = 0, _a = _this.lights; _i < _a.length; _i++) {
+                var light = _a[_i];
+                if (light.x < -400) {
+                    light.x += 6 * 300;
+                }
+                else if (light.x > _this.stage.canvas.width) {
+                    light.x -= 6 * 300;
+                }
+                _this.moveLight(light);
+            }
+        };
+        loop();
     };
     return Game;
 }());
