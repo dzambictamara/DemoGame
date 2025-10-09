@@ -1,11 +1,8 @@
-import * as createjs from "createjs-module";
-let stage: createjs.Stage;
-let playerSheet: createjs.SpriteSheet;
-let player: createjs.Sprite;
-let isJumping = false;
+import { Game } from "./game.js";
+
+
 let loader: createjs.LoadQueue;
-let lights: createjs.Bitmap[] = [];
-let light: createjs.Bitmap;
+let game: Game;
 function init() {
 
     let manifest = [
@@ -25,121 +22,9 @@ function init() {
 
 
 function handleComplete() {
-    stage = new createjs.Stage("gameCanvas");
-
-    let background = new createjs.Shape();
-    background.graphics.beginLinearGradientFill(["#010101", "#0f375e", "#3e5e7d"], [0, 0.8, 1], 0, 0, 0, 600);
-    background.graphics.drawRect(0, 0, 1200, 600);
-    stage.addChild(background);
-
-    createScene();
-
-    createPlayer();
-
-
-    keyboardControls();
-
-    createjs.Ticker.timingMode = createjs.Ticker.RAF;
-    createjs.Ticker.addEventListener("tick", stage);
+    game = new Game(loader);
 }
 
 
-function createScene() {
-
-    let city = new createjs.Bitmap(loader.getResult("city"));
-    city.scaleX = 3;
-    city.scaleY = 1.2;
-    city.x = -100;
-    city.y = (stage.canvas as HTMLCanvasElement).height - 450;
-    stage.addChild(city);
-
-    if (!lights) {
-        lights = [];
-    }
-    for (let i = 0; i < 6; i++) {
-        let light = new createjs.Bitmap(loader.getResult("light"));
-        light.scaleX = 0.3;
-        light.scaleY = 0.3;
-        light.x = (-100 + i * 300);
-        light.y = (stage.canvas as HTMLCanvasElement).height - 400;
-        stage.addChild(light);
-
-        lights.push(light);
-    }
-}
-
-function createPlayer() {
-    playerSheet = new createjs.SpriteSheet({
-        images: [loader.getResult("walk1"), loader.getResult("walk2"), loader.getResult("idle"), loader.getResult("jump")],
-        frames: { width: 80, height: 110, count: 4 },
-        animations: {
-            walk: [0, 1, "walk", 0.005],
-            idle: [1, 1, "idle", 0.1],
-            jump: [3, 3, "jump", 0.1]
-        }
-    });
-
-    let startX = (stage.canvas as HTMLCanvasElement).width / 2;
-    let startY = (stage.canvas as HTMLCanvasElement).height - 50;
-
-    player = new createjs.Sprite(playerSheet, "idle");
-    player.regX = 80 / 2;
-    player.regY = 110 / 2;
-    player.x = startX;
-    player.y = startY;
-    stage.addChild(player);
-}
-
-function keyboardControls() {
-    window.addEventListener("keydown", (event) => {
-        switch (event.key) {
-            case "ArrowRight":
-                player.scaleX = 1; // Flip the sprite
-                player.gotoAndPlay("walk");
-                for (let light of lights) {
-                    if (light.x < -400) {
-                        light.x = light.x + 6 * 300; // Reset position to the left
-                    }
-                    createjs.Tween.get(light).to({ x: light.x - 10 }, 50)
-                        .call(() => {
-                            player.gotoAndPlay("idle");
-
-                        });
-                }
-
-                break;
-
-            case "ArrowLeft":
-                player.scaleX = -1; // Flip the sprite
-                player.gotoAndPlay("walk");
-                for (let light of lights) {
-                    if (light.x > (stage.canvas as HTMLCanvasElement).width) {
-                        light.x = light.x - 6 * 300; // Reset position to the left
-                    }
-                    createjs.Tween.get(light).to({ x: light.x + 10 }, 50)
-                        .call(() => {
-                            player.gotoAndPlay("idle");
-                        });
-                }
-                break;
-
-            case "ArrowUp":
-                if (!isJumping) {
-                    isJumping = true;
-                    player.gotoAndPlay("jump");
-                    createjs.Tween.get(player).to({ y: player.y - 150 }, 500, createjs.Ease.quadOut)
-                        .to({ y: player.y }, 500, createjs.Ease.quadIn)
-                        .call(() => {
-                            isJumping = false;
-                            player.gotoAndPlay("idle");
-                        });
-                }
-                break;
-            default:
-                break;
-        }
-    });
-
-}
-
+document.addEventListener("DOMContentLoaded", init);
 
