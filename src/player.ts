@@ -24,7 +24,7 @@ export class Player {
         if (this.isJumping) return;
         this.isJumping = true;
         this.sprite.gotoAndPlay("jump");
-        createjs.Tween.get(this.sprite, {override:true}).to({ y: this.sprite.y - 150 }, 500, createjs.Ease.quadOut)
+        createjs.Tween.get(this.sprite, { override: true }).to({ y: this.sprite.y - 150 }, 500, createjs.Ease.quadOut)
             .to({ y: this.sprite.y }, 500, createjs.Ease.quadIn)
             .call(() => {
                 this.isJumping = false;
@@ -35,9 +35,9 @@ export class Player {
 
     walk(direction: "left" | "right",) {
         if (this.isJumping) return;
+        this.isWalking = true;
         this.sprite.gotoAndPlay("walk");
 
-        this.isWalking = true;
         if (direction === "right") {
             this.sprite.scaleX = 1; // Flip the sprite
         } else {

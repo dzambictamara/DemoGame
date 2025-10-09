@@ -30,8 +30,8 @@ var Player = /** @class */ (function () {
     Player.prototype.walk = function (direction) {
         if (this.isJumping)
             return;
-        this.sprite.gotoAndPlay("walk");
         this.isWalking = true;
+        this.sprite.gotoAndPlay("walk");
         if (direction === "right") {
             this.sprite.scaleX = 1; // Flip the sprite
         }

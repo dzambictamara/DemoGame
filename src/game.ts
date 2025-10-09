@@ -50,8 +50,8 @@ export class Game {
             frames: { width: 80, height: 110, count: 4 },
             animations: {
                 walk: [0, 1, "walk", 0.1],
-                idle: [1, 1, "idle", 0.1],
-                jump: [3, 3, "jump", 0.1]
+                idle: [1, 1, "idle"],
+                jump: [3, 3, "jump"]
             }
         });
 
@@ -74,7 +74,12 @@ export class Game {
     keyboardControls() {
         window.addEventListener("keydown", (event) => {
 
-            //this.player.speed = event.repeat ? 20 : 10;
+            if (event.key === "p") createjs.Ticker.paused = !createjs.Ticker.paused;
+            
+            if (createjs.Ticker.paused){
+                if (this.player.isWalking) this.player.idle();
+                return;
+            }
 
             switch (event.key) {
                 case "ArrowRight":

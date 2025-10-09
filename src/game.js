@@ -39,8 +39,8 @@ var Game = /** @class */ (function () {
             frames: { width: 80, height: 110, count: 4 },
             animations: {
                 walk: [0, 1, "walk", 0.1],
-                idle: [1, 1, "idle", 0.1],
-                jump: [3, 3, "jump", 0.1]
+                idle: [1, 1, "idle"],
+                jump: [3, 3, "jump"]
             }
         });
         var startX = this.stage.canvas.width / 2;
@@ -59,7 +59,13 @@ var Game = /** @class */ (function () {
     Game.prototype.keyboardControls = function () {
         var _this = this;
         window.addEventListener("keydown", function (event) {
-            //this.player.speed = event.repeat ? 20 : 10;
+            if (event.key === "p")
+                createjs.Ticker.paused = !createjs.Ticker.paused;
+            if (createjs.Ticker.paused) {
+                if (_this.player.isWalking)
+                    _this.player.idle();
+                return;
+            }
             switch (event.key) {
                 case "ArrowRight":
                     _this.player.walk("right");
