@@ -1,10 +1,10 @@
 import { Player } from "./player.js";
+import { Scene } from "./scene.js";
 import { IdleState } from "./states/idleState.js";
 import { JumpState } from "./states/JumpState.js";
 import { WalkState } from "./states/WalkState.js";
 export class Game {
     constructor(loader) {
-        this.moveScene = false;
         this.loader = loader;
         this.stage = new createjs.Stage("gameCanvas");
         this.createScene();
@@ -18,17 +18,7 @@ export class Game {
     update() {
         this.stage.update();
         this.player.state.update();
-        if (!this.moveScene)
-            return;
-        for (let light of this.lights) {
-            if (light.x < -400) {
-                light.x += 6 * 300;
-            }
-            else if (light.x > this.stage.canvas.width) {
-                light.x -= 6 * 300;
-            }
-            this.moveLight(light);
-        }
+        this.scene.update(this.player.sprite.scaleX * this.player.speed);
     }
     createScene() {
         let background = new createjs.Shape();
@@ -41,18 +31,8 @@ export class Game {
         city.x = -100;
         city.y = this.stage.canvas.height - 450;
         this.stage.addChild(city);
-        if (!this.lights) {
-            this.lights = [];
-        }
-        for (let i = 0; i < 6; i++) {
-            let light = new createjs.Bitmap(this.loader.getResult("light"));
-            light.scaleX = 0.3;
-            light.scaleY = 0.3;
-            light.x = (-100 + i * 300);
-            light.y = this.stage.canvas.height - 400;
-            this.stage.addChild(light);
-            this.lights.push(light);
-        }
+        this.scene = new Scene(this.loader.getResult("light"));
+        this.stage.addChild(...this.scene.lights);
     }
     createPlayer() {
         let playerSheet = new createjs.SpriteSheet({
@@ -69,10 +49,6 @@ export class Game {
         this.player = new Player(playerSheet, startX, startY);
         this.stage.addChild(this.player.sprite);
     }
-    moveLight(light) {
-        this.player.sheet.getAnimation("walk").speed = this.player.speed / 100;
-        createjs.Tween.get(light).to({ x: light.x - this.player.sprite.scaleX * this.player.speed }, 50);
-    }
     isDoubleClick(keyPressTimestamps, key) {
         const DOUBLE_KEY_THRESHOLD = 300;
         const now = Date.now();
@@ -88,24 +64,13 @@ export class Game {
             let key = event.key;
             if (key === "p")
                 createjs.Ticker.paused = !createjs.Ticker.paused;
-            if (createjs.Ticker.paused || event.repeat)
+            if (createjs.Ticker.paused || event.repeat || this.player.state instanceof JumpState)
                 return;
-            if (this.player.state instanceof JumpState)
-                return;
-            if (key === "ArrowUp") {
+            if (key === "ArrowUp")
                 this.player.changeState(new JumpState(this.player));
-                return;
-            }
-            if (key === "ArrowRight") {
-                this.player.sprite.scaleX = 1;
-                this.moveScene = true;
-                this.player.sprite.scaleX = 1;
-                this.player.speed = this.isDoubleClick(keyPressTimestamps, key) ? 20 : 10;
-                this.player.changeState(new WalkState(this.player));
-            }
-            if (key === "ArrowLeft") {
-                this.moveScene = true;
-                this.player.sprite.scaleX = -1;
+            if (key === "ArrowRight" || key === "ArrowLeft") {
+                this.scene.isMoving = true;
+                this.player.sprite.scaleX = key === "ArrowRight" ? 1 : -1;
                 this.player.speed = this.isDoubleClick(keyPressTimestamps, key) ? 20 : 10;
                 this.player.changeState(new WalkState(this.player));
             }
@@ -113,7 +78,7 @@ export class Game {
         window.addEventListener("keyup", (event) => {
             if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
                 this.player.changeState(new IdleState(this.player));
-                this.moveScene = false;
+                this.scene.isMoving = false;
             }
         });
     }
