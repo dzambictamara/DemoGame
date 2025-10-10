@@ -1,8 +1,5 @@
 import { Game } from "./game.js";
 
-
-let loader: createjs.LoadQueue;
-let game: Game;
 function init() {
 
     let manifest = [
@@ -14,15 +11,12 @@ function init() {
         { src: "scene/city.png", id: "city", crossOrigin: "anonymous" }
 
     ];
-    loader = new createjs.LoadQueue(false);
+    let loader = new createjs.LoadQueue(false);
     loader.loadManifest(manifest, true, "./assets/");
-    loader.on("complete", handleComplete);
-}
-
-
-
-function handleComplete() {
-    game = new Game(loader);
+    loader.on("complete", () => {
+        let game = new Game(loader);
+        game.start();
+    });
 }
 
 

@@ -1,19 +1,9 @@
 import { IdleState } from "./states/idleState.js";
-import { JumpState } from "./states/JumpState.js";
-import { PlayerState } from "./states/playerState.js";
-import { WalkState } from "./states/WalkState.js";
-
 export class Player {
-    sheet: createjs.SpriteSheet;
-    sprite: createjs.Sprite;
-    state: PlayerState;
-    prevState: PlayerState;
-    speed: number = 10;
-    isJumping: boolean = false;
-    isWalking: boolean = false;
-
-
-    constructor(sheet: createjs.SpriteSheet, startX: number, startY: number) {
+    constructor(sheet, startX, startY) {
+        this.speed = 10;
+        this.isJumping = false;
+        this.isWalking = false;
         this.sheet = sheet;
         this.sprite = new createjs.Sprite(this.sheet, "idle");
         this.prevState = new IdleState(this);
@@ -23,11 +13,9 @@ export class Player {
         this.sprite.x = startX;
         this.sprite.y = startY;
     }
-
-    changeState(newState: PlayerState) {
+    changeState(newState) {
         this.prevState = this.state;
         this.prevState.makeUpdate = true;
         this.state = newState;
     }
-
 }
