@@ -21,7 +21,7 @@ export class Scene {
         for (let light of this.lights) {
             if (light.x < -400) {
                 light.x += 6 * 300;
-            } else if (light.x > 6 * 300 -100) {
+            } else if (light.x > 1200) {
                 light.x -= 6 * 300;
             }
             createjs.Tween.get(light).to({ x: light.x - playerSpeed }, 50);

@@ -3,7 +3,6 @@ export class Player {
     constructor(sheet, startX, startY) {
         this.speed = 10;
         this.isJumping = false;
-        this.isWalking = false;
         this.sheet = sheet;
         this.sprite = new createjs.Sprite(this.sheet, "idle");
         this.prevState = new IdleState(this);
@@ -14,8 +13,16 @@ export class Player {
         this.sprite.y = startY;
     }
     changeState(newState) {
+        if (this.isJumping && newState instanceof IdleState) { //fix jumpState + keyUp  
+            this.prevState = newState;
+            return;
+        }
+        ;
         this.prevState = this.state;
         this.prevState.makeUpdate = true;
         this.state = newState;
+    }
+    update() {
+        this.state.update();
     }
 }

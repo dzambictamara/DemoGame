@@ -9,6 +9,7 @@ export class Game {
     loader: createjs.LoadQueue;
     player!: Player;
     scene!: Scene;
+    private keyPressTimestamps: Record<string, number[]> = {};
 
     constructor(loader: createjs.LoadQueue) {
         this.loader = loader;
@@ -16,6 +17,7 @@ export class Game {
         this.createScene();
         this.createPlayer();
         this.keyboardControls();
+        this.pauseControl();
     }
 
     start() {
@@ -25,7 +27,7 @@ export class Game {
 
     update() {
         this.stage.update();
-        this.player.state.update();
+        this.player.update();
         this.scene.update(this.player.sprite.scaleX * this.player.speed)
     }
 
@@ -65,6 +67,41 @@ export class Game {
         this.stage.addChild(this.player.sprite);
     }
 
+    keyboardControls() {
+        window.addEventListener("keydown", this.handleKeyDown.bind(this));
+        window.addEventListener("keyup", this.handleKeyUp.bind(this));
+    }
+
+    pauseControl() {
+        window.addEventListener("keydown", (event) => {
+            if (event.key === "p") createjs.Ticker.paused = !createjs.Ticker.paused;
+        });
+    }
+
+    handleKeyDown(event: KeyboardEvent) {
+        if (createjs.Ticker.paused || event.repeat || this.player.isJumping) return;
+
+        switch (event.key) {
+            case "ArrowUp":
+                this.player.changeState(new JumpState(this.player));
+                break;
+            case "ArrowRight":
+            case "ArrowLeft":
+                this.scene.isMoving = true;
+                this.player.sprite.scaleX = event.key === "ArrowRight" ? 1 : -1;
+                this.player.speed = this.isDoubleClick(this.keyPressTimestamps, event.key) ? 20 : 10;
+                this.player.changeState(new WalkState(this.player));
+                break;
+        }
+
+    }
+
+    handleKeyUp(event: KeyboardEvent) {
+        if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+            this.player.changeState(new IdleState(this.player))
+            this.scene.isMoving = false;
+        }
+    }
 
     isDoubleClick(keyPressTimestamps: Record<string, number[]>, key: string): boolean {
         const DOUBLE_KEY_THRESHOLD = 300;
@@ -76,35 +113,5 @@ export class Game {
 
         return keyPressTimestamps[key].length >= 2;
     }
-
-    keyboardControls() {
-
-        let keyPressTimestamps: Record<string, number[]> = {};
-
-        window.addEventListener("keydown", (event) => {
-            let key = event.key;
-
-            if (key === "p") createjs.Ticker.paused = !createjs.Ticker.paused;
-
-            if (createjs.Ticker.paused || event.repeat || this.player.state instanceof JumpState) return;
-
-            if (key === "ArrowUp")  this.player.changeState(new JumpState(this.player));
-
-            if (key === "ArrowRight" || key === "ArrowLeft") {
-                this.scene.isMoving = true;
-                this.player.sprite.scaleX = key === "ArrowRight" ? 1 : -1;
-                this.player.speed = this.isDoubleClick(keyPressTimestamps, key) ? 20 : 10;
-                this.player.changeState(new WalkState(this.player));
-            }
-        });
-
-        window.addEventListener("keyup", (event) => {
-            if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-                this.player.changeState(new IdleState(this.player))
-                this.scene.isMoving = false;
-            }
-        });
-    }
-
 
 }
